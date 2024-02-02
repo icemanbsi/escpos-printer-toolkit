@@ -16,6 +16,34 @@ var exchange_text_with_times = exports.exchange_text_with_times = function excha
     return bytes.toBuffer()
 }
 
+var raw_text_buffer = exports.raw_text_buffer = function raw_text_buffer(text) {
+    options = {
+        beep: false,
+        cut: true,
+        tailingLine: true,
+        encoding: 'GBK',
+    }
+
+    var bytes = new BufferHelper();
+    var temp = "";
+    for (var i = 0; i < text.length; i++) {
+        var ch = text[i];
+
+        if (ch == "\n") {
+            temp = temp + ch;
+            bytes.concat(iconv.encode(temp, options.encoding));
+            temp = "";
+        }
+        else {
+            temp = temp + ch;
+        }
+    }
+    if (temp.length > 0) {
+        bytes.concat(iconv.encode(temp, options.encoding));
+    }
+    return bytes.toBuffer();
+}
+
 var exchange_text = exports.exchange_text = function exchange_text(text, options){
     options = options || {
         beep: false,
@@ -92,7 +120,13 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
     // 弹钱箱
     var moneybox_bytes      = new Buffer([27, 112, 7]);
     // 蜂鸣 { 27, 66, 次数， 时长 * 50ms }
-    var beep_bytes          = new Buffer([ 27, 66, 3, 2 ])
+	  var beep_bytes          = new Buffer([27, 66, 3, 2]);
+
+    //QR CODE
+    var qrprint_1 = new Buffer([29, 40, 107, 3, 0, 49, 65, 0]);
+    var qrprint_2 = new Buffer([29, 40, 107, 3, 0, 49, 67, 5 ]);
+    var qrprint_3 = new Buffer([29, 40, 107, 3, 0, 49, 69, 48 ]);
+    var qrprint_4 = new Buffer([29, 40, 107, 3, 0, 49, 81, 48 ]);
 
     var bytes = new BufferHelper();
     bytes.concat(init_printer_bytes);
@@ -106,67 +140,78 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
         {
             bytes.concat(iconv.encode(temp, options.encoding));
             temp = "";
-            if (text.substring(i, i+3) == "<M>")
-            {
+            if (text.substring(i, i + 3) == "<M>") {
                 bytes.concat(m_start_bytes); i += 2;
             }
-            else if (text.substring(i, i+4) == "</M>")
-            {
+            else if (text.substring(i, i + 4) == "</M>") {
                 bytes.concat(m_end_bytes); i += 3;
             }
-            else if (text.substring(i, i+3) == "<B>")
-            {
+            else if (text.substring(i, i + 3) == "<B>") {
                 bytes.concat(b_start_bytes); i += 2;
             }
-            else if (text.substring(i, i+4) == "</B>")
-            {
+            else if (text.substring(i, i + 4) == "</B>") {
                 bytes.concat(b_end_bytes); i += 3;
             }
-            else if (text.substring(i, i+3) == "<D>")
-            {
+            else if (text.substring(i, i + 3) == "<D>") {
                 bytes.concat(d_start_bytes); i += 2;
             }
-            else if (text.substring(i, i+4) == "</D>")
-            {
+            else if (text.substring(i, i + 4) == "</D>") {
                 bytes.concat(d_end_bytes); i += 3;
             }
-            else if (text.substring(i, i+3) == "<C>")
-            {
+            else if (text.substring(i, i + 3) == "<C>") {
                 bytes.concat(c_start_bytes); i += 2;
             }
-            else if (text.substring(i, i+4) == "</C>")
-            {
+            else if (text.substring(i, i + 4) == "</C>") {
                 bytes.concat(c_end_bytes); i += 3;
             }
-            else if (text.substring(i, i+4) == "<CM>")
-            {
+            else if (text.substring(i, i + 4) == "<CM>") {
                 bytes.concat(cm_start_bytes); i += 3;
             }
-            else if (text.substring(i, i+5) == "</CM>")
-            {
+            else if (text.substring(i, i + 5) == "</CM>") {
                 bytes.concat(cm_end_bytes); i += 4;
             }
-            else if (text.substring(i, i+4) == "<CD>")
-            {
+            else if (text.substring(i, i + 4) == "<CD>") {
                 bytes.concat(cd_start_bytes); i += 3;
             }
-            else if (text.substring(i, i+5) == "</CD>")
-            {
+            else if (text.substring(i, i + 5) == "</CD>") {
                 bytes.concat(cd_end_bytes); i += 4;
             }
-            else if (text.substring(i, i+4) == "<CB>")
-            {
+            else if (text.substring(i, i + 4) == "<CB>") {
                 bytes.concat(cb_start_bytes); i += 3;
             }
-            else if (text.substring(i, i+5) == "</CB>")
-            {
+            else if (text.substring(i, i + 5) == "</CB>") {
                 bytes.concat(cb_end_bytes); i += 4;
             }
-            else if (text.substring(i, i+4) == "<QR>")
-            {
+			else if (text.substring(i, i + 4) == "<QR>") {
+
+				index = text.indexOf("</QR>", i + 4);
+				if (index != -1) {
+					
+					bytes.concat(align_center_bytes);
+					bytes.concat(none_space_bytes);
+
+					let qrData = text.substring(i + 4, index);
+					let qrLen = qrData.length + 3;
+					let pL = qrLen % 256;
+					let pH = Math.floor(qrLen / 256);
+					bytes.concat(qrprint_1);
+					bytes.concat(qrprint_2);
+					bytes.concat(qrprint_3);
+					bytes.concat(new Buffer([29, 40, 107, pL, pH, 49, 80, 48]))
+					bytes.concat(iconv.encode(qrData, options.encoding));
+					bytes.concat(qrprint_4);
+					//*/
+					i = index + 4;
+
+					bytes.concat(default_space_bytes);
+					bytes.concat(align_left_bytes);
+				}
+				else {
+					temp = temp + ch;
+				}
+				/*
                 index = text.indexOf("</QR>", i + 4);
-                if (index != -1)
-                {
+                if (index != -1) {
                     var url = text.substring(i + 4, index);
                     bytes.concat(align_center_bytes);
                     bytes.concat(none_space_bytes);
@@ -175,16 +220,14 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
                     bytes.concat(align_left_bytes);
                     i = index + 4;
                 }
-                else
-                {
+                else {
                     temp = temp + ch;
                 }
+				//*/
             }
-            else if (text.substring(i, i+5) == "<QRI>")
-            {
+            else if (text.substring(i, i + 5) == "<QRI>") {
                 index = text.indexOf("</QRI>", i + 5);
-                if (index != -1)
-                {
+                if (index != -1) {
                     var url = text.substring(i + 5, index);
                     bytes.concat(align_center_bytes);
                     bytes.concat(none_space_bytes);
@@ -193,16 +236,13 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
                     bytes.concat(align_left_bytes);
                     i = index + 5;
                 }
-                else
-                {
+                else {
                     temp = temp + ch;
                 }
             }
-            else if (text.substring(i, i+5) == "<PCN>")
-            {
+            else if (text.substring(i, i + 5) == "<PCN>") {
                 index = text.indexOf("</PCN>", i + 5);
-                if (index != -1)
-                {
+                if (index != -1) {
                     var url = "http://open.weixin.qq.com/qr/code/?username=" + text.substring(i + 5, index);
                     bytes.concat(align_center_bytes);
                     bytes.concat(none_space_bytes);
@@ -211,13 +251,27 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
                     bytes.concat(align_left_bytes);
                     i = index + 5;
                 }
-                else
-                {
+                else {
                     temp = temp + ch;
                 }
             }
-        }
-        else if(ch == "\n"){
+            else if (text.substring(i, i + 5) == "<IMG>")
+            {
+                bytes.concat(none_space_bytes);
+                index = text.indexOf("</IMG>", i + 5);
+                if (index != -1) {
+                    var imageData = text.substring(i + 5, index);
+                    bytes.concat(iconv.encode(imageData, "ISO-8859-1"));
+                    i = index + 5;
+                }
+                else {
+                    temp = temp + ch;
+                }
+                bytes.concat(default_space_bytes);
+                bytes.concat(align_left_bytes);
+            }
+        } 
+        else if (ch == "\n") {
             temp = temp + ch;
             bytes.concat(iconv.encode(temp, options.encoding));
             bytes.concat(reset_bytes);

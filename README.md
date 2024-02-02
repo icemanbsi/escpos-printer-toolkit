@@ -27,3 +27,6 @@ EPToolkit.exchange_text("<C>这是一段打印测试文字</C>", options)
 ```
 
 
+## What's New
+Forked from https://github.com/wanxsb/escpos-printer-toolkit
+- added qr code print support
