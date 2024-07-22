@@ -123,8 +123,8 @@ var exchange_text = exports.exchange_text = function exchange_text(text, options
 	  var beep_bytes          = new Buffer([27, 66, 3, 2]);
 
     //QR CODE
-    var qrprint_1 = new Buffer([29, 40, 107, 3, 0, 49, 65, 0]);
-    var qrprint_2 = new Buffer([29, 40, 107, 3, 0, 49, 67, 5 ]);
+    var qrprint_1 = new Buffer([29, 40, 107, 4, 0, 49, 65, 50, 0]);
+    var qrprint_2 = new Buffer([29, 40, 107, 3, 0, 49, 67, 6 ]);
     var qrprint_3 = new Buffer([29, 40, 107, 3, 0, 49, 69, 48 ]);
     var qrprint_4 = new Buffer([29, 40, 107, 3, 0, 49, 81, 48 ]);
 
