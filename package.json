@@ -1,6 +1,6 @@
 {
   "name": "escpos-printer-toolkit",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "点单宝打印机指令定义",
   "main": "index.js",
   "scripts": {
